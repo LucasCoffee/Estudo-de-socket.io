@@ -16,6 +16,15 @@ socket.on("documento_existente", (nomeDocumento) => {
     window.alert(`O documento ${nomeDocumento} já existe`)
 })
 
+
+
+socket.on("nova_mensagem", (mensagem) => {
+
+    adicionarMensagem(mensagem)
+
+})
+
+
 function emitirAdicionarDocumento(nomeDocumento){
     socket.emit("adicionar_documento", nomeDocumento)
 }

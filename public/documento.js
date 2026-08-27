@@ -1,28 +1,28 @@
-import { emitirTextoEditor, selecionarDocumento, emitirExclusaoDocumento} from "./socket-front-documento.js"
+import {selecionarDocumento, emitirExclusaoDocumento, enviarMensagem} from "./socket-front-documento.js"
 
-const parametros = new URLSearchParams(window.location.search)
-const nomeDocumento = parametros.get("nome") // nome do parametro na url
+const nomeDocumento = new URLSearchParams(window.location.search).get("nome") // nome do parametro na url
 
 const tituloDocumento = document.getElementById("titulo-documento")
-const textArea = document.getElementById("editor-texto")
+const inputMensagem = document.getElementById("input-mensagem")
+const botao_enviar = document.getElementById("enviar-mensagem")
 const botao_deletar = document.getElementById("excluir-documento")
+const area_mensagens = document.getElementById("area-mensagens")
 
-tituloDocumento.textContent = nomeDocumento || "Nome do documento nao foi definido"
+tituloDocumento.textContent = nomeDocumento || "Documento sem título"
 
-selecionarDocumento(nomeDocumento) // chama funcao no outro arquivo passando o nome
-
-textArea.addEventListener("keyup", () => {
-   emitirTextoEditor({
-    texto: textArea.value, 
-    nomeDocumento})
+botao_enviar.addEventListener("click", () => {
+    const mensagem = inputMensagem.value
+    inputMensagem.value = ""
+    enviarMensagem(nomeDocumento, mensagem)
 })
 
 botao_deletar.addEventListener("click", () => {
     emitirExclusaoDocumento(nomeDocumento)
 })
 
+selecionarDocumento(nomeDocumento)
+
 function alertarERedirecionar(nome){
-    console.log(nome, nomeDocumento)
     if(nome == nomeDocumento){
         alert(`Documento ${nome} foi excluido`)
         window.location.href = "/"
@@ -30,8 +30,19 @@ function alertarERedirecionar(nome){
     
 }
 
-function atualizarTextoEditor(texto){
-    textArea.value = texto
+function atualizarAreaMensagem(mensagem){
+    
+    const paragrafo = document.createElement("p")
+    paragrafo.classList.add("bg-light", "p-2", "rounded", "mb-2")
+    paragrafo.textContent = mensagem
+
+    area_mensagens.appendChild(paragrafo)
 }
 
-export {atualizarTextoEditor, alertarERedirecionar}
+function carregarHistoricoMensagens(mensagens){
+    if(Array.isArray(mensagens)){
+        mensagens.forEach((mensagem) => atualizarAreaMensagem(mensagem))
+    }
+}
+
+export {atualizarAreaMensagem, alertarERedirecionar, carregarHistoricoMensagens}

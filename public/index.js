@@ -1,31 +1,96 @@
-import "./socket-front-index.js"
-import { emitirAdicionarDocumento } from "./socket-front-index.js"
-const listaDocumentos = document.getElementById("lista-documentos");
-const form = document.getElementById("form-adiciona-documento")
-const inputDocumento = document.getElementById("input-documento")
+const socket = io()
 
-form.addEventListener("submit", (event) => {
-    event.preventDefault()
-    emitirAdicionarDocumento(inputDocumento.value)
-    inputDocumento.value = ""
+const listaDocumentos = document.querySelector("#lista-documentos")
+const form = document.querySelector("#form-adiciona-documento")
+const inputDocumento = document.querySelector("#input-documento")
+
+
+function inserirLinkDocumento(nomeDocumento) {
+
+    const link = document.createElement("a")
+
+    link.href = `documento.html?nome=${encodeURIComponent(nomeDocumento)}`
+    link.textContent = nomeDocumento
+
+    link.classList.add(
+        "list-group-item",
+        "list-group-item-action"
+    )
+
+    listaDocumentos.appendChild(link)
+}
+
+
+function removerLinkDocumento(nomeDocumento) {
+
+    const links = listaDocumentos.querySelectorAll("a")
+
+    links.forEach(link => {
+
+        if (link.textContent === nomeDocumento) {
+            link.remove()
+        }
+
+    })
+
+}
+
+
+socket.emit("obter_documentos", (documentos) => {
+
+    documentos.forEach(documento => {
+
+        inserirLinkDocumento(documento.nome)
+
+    })
+
 })
 
 
-function inserirLinkDocumento(nome){
-    listaDocumentos.innerHTML += 
-    `<a 
-        href="documento.html?nome=${nome}"
-        class="list-group-item list-group-item-action"
-        id="documento_${nome}"
-    >
-        ${nome}
-    </a>`;
+socket.on("adicionar_documento_interface", (nomeDocumento) => {
 
+    inserirLinkDocumento(nomeDocumento)
+
+})
+
+
+socket.on("documento_existente", (nomeDocumento) => {
+
+    window.alert(
+        `O documento ${nomeDocumento} já existe`
+    )
+
+})
+
+
+form.addEventListener("submit", (evento) => {
+
+    evento.preventDefault()
+
+    const nomeDocumento = inputDocumento.value.trim()
+
+    if (!nomeDocumento) {
+        return
+    }
+
+    socket.emit(
+        "adicionar_documento",
+        nomeDocumento
+    )
+
+    inputDocumento.value = ""
+
+})
+
+
+socket.on("excluir_documento_sucesso", (nomeDocumento) => {
+
+    removerLinkDocumento(nomeDocumento)
+
+})
+
+
+export {
+    inserirLinkDocumento,
+    removerLinkDocumento
 }
-
-function removerLinkDocumento(nome){
-    const documento = document.getElementById(`documento_${nome}`)
-    listaDocumentos.removeChild(documento)
-}
-
-export { inserirLinkDocumento, removerLinkDocumento }
