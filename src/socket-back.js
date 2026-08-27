@@ -1,51 +1,78 @@
 import io from "./index.js"
-import { atualizaDocumento, encontrarDocumentos, obterDocumentos, adicionarDocumento, excluirDocumento} from "./documentosDb.js";
+
+import {
+    encontrarDocumentos,
+    obterDocumentos,
+    adicionarDocumento,
+    excluirDocumento,
+    adicionarMensagem,
+} from "./documentosDb.js"
+
+
 io.on("connection", (socket) => {
 
-  socket.on("obter_documentos", async (devolverDocumentos) => {
-    const documentos = await obterDocumentos()
-    devolverDocumentos(documentos)
-  })
+    socket.on("adicionar_documento", (nomeDocumento) => {
 
-  socket.on("adicionar_documento", async (nomeDocumento) => {
+        const documentoExiste =
+            encontrarDocumentos(nomeDocumento)
 
-    const documentoExite = (await encontrarDocumentos(nomeDocumento)) !== null;
+        if (documentoExiste) {
 
-    if(documentoExite){
-      socket.emit("documento_existente", nomeDocumento)
-    }else{
-      const resultado = await adicionarDocumento(nomeDocumento)
-        if(resultado.acknowledged){
-          io.emit("adicionar_documento_interface", nomeDocumento)
+            socket.emit(
+                "documento_existente",
+                nomeDocumento
+            )
+
+            return
         }
-    }
 
+        adicionarDocumento(nomeDocumento)
+        io.emit("adicionar_documento_interface", nomeDocumento)
+
+    })
     
-  })
+    socket.on("selecionar_documento", (nomeDocumento, devolverHistorico) => {
 
-  socket.on("selecionar_documento",async (nomeDocumento, devolvertexto) => {
+        socket.join(nomeDocumento)
 
-    socket.join(nomeDocumento)
-    const documento = await encontrarDocumentos(nomeDocumento)
-    
-    if(documento){
-      devolvertexto(documento.texto)
-    }
-  })
+        const documento = encontrarDocumentos(nomeDocumento)
 
-  socket.on("digitando", async ({texto, nomeDocumento}) => {
-    const atualizacao = await atualizaDocumento(nomeDocumento, texto)
-    if(atualizacao.modifiedCount){
-      socket.to(nomeDocumento).emit("texto_editor_clientes", texto)
+        if (documento) {
+            devolverHistorico(documento.mensagens)
+        }else{
+            devolverHistorico([])
+        }
 
-    }
-  });
+    })
 
-  socket.on("excluir_documento", async (nome) => {
-    const documentoExcluido = await excluirDocumento(nome)
-    if(documentoExcluido.deletedCount){
-      io.emit("excluir_documento_sucesso", nome)
-    }
-  })
-});
+    socket.on("obter_documentos", (devolverDocumentos) => {
 
+        devolverDocumentos(obterDocumentos())
+
+    })
+
+    socket.on("excluir_documento", (nomeDocumento) => {
+
+        const resultado = excluirDocumento(nomeDocumento)
+
+        if (resultado.deletedCount === 1) {
+
+            io.emit( "excluir_documento_sucesso", nomeDocumento )
+
+        }
+
+    })
+
+    socket.on("receber_mensagem", ({nomeDocumento, mensagem}) => {
+
+        const documento = encontrarDocumentos(nomeDocumento)
+
+        if (documento) {
+            adicionarMensagem(nomeDocumento, mensagem)
+            io.to(nomeDocumento).emit("devolver_mensagem", mensagem)
+        }
+
+        
+    })
+
+})

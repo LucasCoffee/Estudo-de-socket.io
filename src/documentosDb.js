@@ -1,42 +1,79 @@
-import { documentosColecao } from "./dbConnect.js"
+const documentos = []
 
-
-function encontrarDocumentos(nome){
-  const documento = documentosColecao.findOne({nome: nome})
-  return documento
-}
-
-function adicionarDocumento(nomeDocumento){
-    const result = documentosColecao.insertOne({
-       nome: nomeDocumento,
-        texto: ""
+function adicionarDocumento(nome){
+    documentos.push({
+        nome: nome,
+        mensagens: []
     })
-
-    return result
 }
 
-function atualizaDocumento(nome, texto){
-    const atualizacao = documentosColecao.updateOne(
-        {nome: nome}, 
-        {$set: {
-            texto: texto
-            }
-        }
-        )
-    return atualizacao
-}
+function encontrarDocumentos(nome) {
+    return documentos.find(documento => documento.nome === nome)}
 
-function obterDocumentos(){
-    const documentos = documentosColecao.find().toArray()
+
+function obterDocumentos() {
+
     return documentos
 }
 
-function excluirDocumento(nomeDocumento){
-    const result = documentosColecao.deleteOne({
-        nome: nomeDocumento
-    })
+function atualizaDocumento(nome, texto) {
+    const documento = documentos.find(documento => documento.nome === nome)
 
-    return result
+    if (!documento) {
+        return null
+    }
+
+    documento.texto = texto
+
+    return documento
 }
 
-export { encontrarDocumentos, atualizaDocumento, obterDocumentos, adicionarDocumento, excluirDocumento}
+function excluirDocumento(nomeDocumento) {
+    const indice = documentos.findIndex(
+        documento => documento.nome === nomeDocumento
+    )
+
+    if (indice === -1) {
+        return {
+            deletedCount: 0
+        }
+    }
+
+    documentos.splice(indice, 1)
+
+    return {
+        deletedCount: 1
+    }
+}
+
+function adicionarMensagem(nomeDocumento, mensagem) {
+
+    const documento = encontrarDocumentos(nomeDocumento)
+
+    if (!documento) {
+        return null
+    }
+
+    documento.mensagens.push(mensagem)
+
+    return documento
+}
+
+function obterMensagens(nomeDocumento) {
+
+    const documento = encontrarDocumentos(nomeDocumento)
+    if (!documento) {
+        return []
+    }
+    return documento.mensagens
+}
+
+export {
+    encontrarDocumentos,
+    atualizaDocumento,
+    obterDocumentos,
+    adicionarDocumento,
+    excluirDocumento, 
+    adicionarMensagem,
+    obterMensagens
+}
